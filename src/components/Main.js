@@ -33,10 +33,48 @@ function get30DegRandom() {
 }
 
 class ImgFigure extends React.Component {
+  /*
+    * imgFigure 的点击处理函数
+    */
+  handleClick(e) {
+    if (this.props.arrange.isCenter) {
+      this.props.inverse();
+    } else {
+      this.props.center();
+    }
+
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
+
   render() {
+
+    let styleObj = {};
+
+    //如果props属性中指定了这张图片的位置，则使用
+    if(this.props.arrange.pos) {
+      styleObj = this.props.arrange.pos;
+    }
+
+    //如果图片的旋转角度值有值且不为零，添加旋转角度
+    if(this.props.arrange.rotate) {
+      (['Moz','ms','Webkit','']).forEach(function(value){
+        styleObj[value + 'Transform'] = 'rotate(' + this.props.arrange.rotate + 'deg)';
+      }.bind(this));
+    }
+
+    // 如果是居中的图片， z-index设为11
+    if (this.props.arrange.isCenter) {
+      styleObj.zIndex = 11;
+    }
+
+    let imgFigureClassName = "img-figure";
+        imgFigureClassName += this.props.arrange.isInverse ? ' is-inverse ' : '';
+
     return (
-      <figure className="img-figure">
-        <img src={this.props.data.imageURL} alt={this.props.data.title}/>
+      <figure className={imgFigureClassName} style={styleObj} onClick={this.handleClick.bind(this)}>
+        <img src={this.props.data.imageURL} alt={this.props.data.title} />
         <figcaption>
           <h2 className="img-title">{this.props.data.title}</h2>
         </figcaption>
@@ -64,54 +102,68 @@ class AppComponent extends React.Component {
         topY: [0, 0]
       }
     };
-
     this.state = {
-      imgsArranageArr: [
-        /*{
-          pos: {
-            left: '0',
-            top: '0'
-          }
-        }*/
-      ]
+      imgsArranageArr: []
     };
   }
+  /*
+   * 翻转图片
+   * @param index 传入当前被执行inverse操作的图片对应的图片信息数组的index值
+   * @returns {Function} 这是一个闭包函数, 其内return一个真正待被执行的函数
+   */
+  inverse(index) {
+    return function() {
+      let imgsArranageArr = this.state.imgsArranageArr;
 
-  //重新布局所有的图片
+      imgsArranageArr[index].isInverse = !imgsArranageArr[index].isInverse;
+
+      this.setState({
+        imgsArranageArr: imgsArranageArr
+      });
+    }.bind(this);
+  }
+  /*
+   * 重新布局所有图片
+   * @param centerIndex 指定居中排布哪个图片
+   */
   rearrange(centetIndex) {
-    let imgsArranageArr = this.state.imgsArranageArr,
-      Constant = this.Constant,
-      centerPos = Constant.centerPos,
-      hPosRange = Constant.hPosRange,
-      vPosRange = Constant.vPosRange,
-      hPosRangeLeftSecX = hPosRange.leftSecX,
-      hPosRangeRightSecX = hPosRange.rightSecX,
-      hPosRangeY = hPosRange.y,
-      vPosRangeTopY = vPosRange.topY,
-      vPosRangeX = vPosRange.x,
-      imgsArrangeTopArr = [],
-      topImgNum = Math.floor(Math.random() * 2),    // 取一个或者不取
-      topImgSpliceIndex = 0,
-      imgsArrangeCenterArr = imgsArranageArr.splice(centetIndex, 1);
+      let imgsArranageArr = this.state.imgsArranageArr,
+        Constant = this.Constant,
+        centerPos = Constant.centerPos,
+        hPosRange = Constant.hPosRange,
+        vPosRange = Constant.vPosRange,
+        hPosRangeLeftSecX = hPosRange.leftSecX,
+        hPosRangeRightSecX = hPosRange.rightSecX,
+        hPosRangeY = hPosRange.y,
+        vPosRangeTopY = vPosRange.topY,
+        vPosRangeX = vPosRange.x,
+        imgsArrangeTopArr = [],
+        topImgNum = Math.floor(Math.random() * 2),    // 取一个或者不取
+        topImgSpliceIndex = 0,
+        imgsArrangeCenterArr = imgsArranageArr.splice(centetIndex, 1);
 
-    //首先居中centerIndex图片
-    imgsArrangeCenterArr[0].pos = centerPos;
+        // 首先居中 centerIndex 的图片, 居中的 centerIndex 的图片不需要旋转
+        imgsArrangeCenterArr[0] = {
+          pos: centerPos,
+          rotate: 0,
+          isCenter: true
+        };
 
-    // 取出要布局上侧的图片的状态信息
-    topImgSpliceIndex = Math.ceil(Math.random() * (imgsArranageArr.length - topImgNum));
-    imgsArrangeTopArr = imgsArranageArr.splice(topImgSpliceIndex, topImgNum);
+        // 取出要布局上侧的图片的状态信息
+        topImgSpliceIndex = Math.ceil(Math.random() * (imgsArranageArr.length - topImgNum));
+        imgsArrangeTopArr = imgsArranageArr.splice(topImgSpliceIndex, topImgNum);
 
-    //布局上不图片
-    imgsArrangeTopArr.forEach(function (value, index) {
+        //布局上不图片
+        imgsArrangeTopArr.forEach(function (value, index) {
 
-      imgsArrangeTopArr[index] = {
-        pos: {
-          top: getRangeRandom(vPosRangeTopY[0], vPosRangeTopY[1]),
-          left: getRangeRandom(vPosRangeX[0], vPosRangeX[1])
-        },
-        rotate: get30DegRandom(),
-        isCenter: false
-      };
+          imgsArrangeTopArr[index] = {
+            pos: {
+              top: getRangeRandom(vPosRangeTopY[0], vPosRangeTopY[1]),
+              left: getRangeRandom(vPosRangeX[0], vPosRangeX[1])
+            },
+            rotate: get30DegRandom(),
+            isCenter: false
+          };
     });
 
 
@@ -146,7 +198,16 @@ class AppComponent extends React.Component {
     this.setState({
       imgsArranageArr: imgsArranageArr
     });
-
+  }
+  /*
+   * 利用arrange函数， 居中对应index的图片
+   * @param index, 需要被居中的图片对应的图片信息数组的index值
+   * @returns {Function}
+   */
+  center(index) {
+    return function() {
+      this.rearrange(index);
+    }.bind(this);
   }
 
   //组件加载以后计算范围
@@ -198,11 +259,15 @@ class AppComponent extends React.Component {
           pos: {
             left: '0',
             top: '0'
-          }
+          },
+          rotate: 0,
+          isInverse: false,
+          isCenter: false
         }
       }
 
-      imgFigures.push(<ImgFigure key={index} data={value} ref={'imgFigure' + index}/>)
+      imgFigures.push(<ImgFigure key={index}  data={value} ref={'imgFigure' + index}
+       arrange={this.state.imgsArranageArr[index]} inverse={this.inverse(index)} center={this.center(index)}/>)
     }.bind(this));
     return (
       <section className="stage" ref="stage">
